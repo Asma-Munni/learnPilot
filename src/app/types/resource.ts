@@ -28,6 +28,7 @@ export interface LearningResource {
   galleryImages?: string[];
   language?: string;
   certificateAvailable?: boolean;
+  viewCount?: number;
 }
 
 export const ALLOWED_CATEGORIES = [
