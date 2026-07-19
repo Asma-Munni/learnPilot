@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BookOpen,
   BrainCircuit,
   ChevronDown,
   LayoutDashboard,
@@ -132,8 +131,11 @@ export default function Navbar() {
     session?.user.name?.charAt(0).toUpperCase() || "U";
 
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-    setIsProfileMenuOpen(false);
+    const handle = requestAnimationFrame(() => {
+      setIsMobileMenuOpen(false);
+      setIsProfileMenuOpen(false);
+    });
+    return () => cancelAnimationFrame(handle);
   }, [pathname]);
 
   useEffect(() => {

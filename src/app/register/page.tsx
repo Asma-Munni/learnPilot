@@ -85,7 +85,7 @@ export default function RegisterPage() {
         savedRole !== "learner" &&
         savedRole !== "instructor"
       ) {
-        router.replace("/dashboard");
+        router.replace("/login");
         return;
       }
 
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace("/login");
       router.refresh();
     };
 
@@ -130,7 +130,7 @@ export default function RegisterPage() {
         password,
         image: image.trim() || undefined,
         role,
-        callbackURL: "/dashboard",
+        callbackURL: "/login",
       });
 
       if (error) {
@@ -142,10 +142,10 @@ export default function RegisterPage() {
       }
 
       setSuccessMessage(
-        "Account created successfully. Redirecting...",
+        "Account created successfully. Redirecting to login...",
       );
 
-      router.push("/dashboard");
+      router.push("/login");
       router.refresh();
     } catch {
       setErrorMessage(
