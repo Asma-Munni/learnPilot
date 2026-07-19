@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
 import { CheckCircle2, AlertTriangle, Eye, Loader2, Sparkles } from "lucide-react";
 import FormSection from "./form-section";
 import ArrayInputField from "./array-input-field";
+import { ALLOWED_CATEGORIES } from "@/app/types/resource";
 
 const formSchema = z.object({
   title: z
@@ -58,8 +60,13 @@ const formSchema = z.object({
 
 
 export default function AddResourceForm() {
+  const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [successData, setSuccessData] = useState<{ resourceId: string; title: string } | null>(null);
+  const [successData, setSuccessData] = useState<{
+    resourceId: string;
+    title: string;
+    status: "draft" | "published";
+  } | null>(null);
 
   const {
     register,
@@ -112,7 +119,12 @@ export default function AddResourceForm() {
         setSuccessData({
           resourceId: response.data.data.resourceId,
           title: response.data.data.title,
+          status: values.status,
         });
+
+        // Invalidate resources queries cache to trigger refetch
+        await queryClient.invalidateQueries({ queryKey: ["resources"] });
+
         reset();
       }
     } catch (err) {
@@ -129,21 +141,25 @@ export default function AddResourceForm() {
 
   if (successData) {
     return (
-      <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 text-center max-w-xl mx-auto shadow-lg space-y-6">
+      <div className="bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-lg space-y-6">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-500 mb-2">
           <CheckCircle2 className="h-10 w-10 animate-bounce" />
         </div>
         
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-            Resource Created!
+            {successData.status === "published"
+              ? "Resource published successfully"
+              : "Resource saved as draft"}
           </h2>
           <p className="text-sm font-semibold text-slate-500 mt-2">
-            &quot;{successData.title}&quot; has been added to the catalog.
+            {successData.status === "published"
+              ? `"${successData.title}" has been published to the catalog.`
+              : `"${successData.title}" has been saved as a draft.`}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+        <div className="flex flex-wrap justify-center gap-3 pt-4">
           <Link
             href={`/resources/${successData.resourceId}`}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 outline-none"
@@ -151,6 +167,23 @@ export default function AddResourceForm() {
             <Eye className="h-4 w-4" />
             View Created Resource
           </Link>
+          
+          <Link
+            href="/items/manage"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 outline-none"
+          >
+            Manage Resources
+          </Link>
+
+          {successData.status === "published" && (
+            <Link
+              href="/resources"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 outline-none"
+            >
+              Go to Explore
+            </Link>
+          )}
+
           <button
             type="button"
             onClick={() => setSuccessData(null)}
@@ -198,13 +231,18 @@ export default function AddResourceForm() {
           <label htmlFor="category" className="block text-sm font-bold text-slate-700">
             Category
           </label>
-          <input
+          <select
             id="category"
-            type="text"
             {...register("category")}
-            placeholder="e.g. Web Development"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
-          />
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
+          >
+            <option value="">Select a Category</option>
+            {ALLOWED_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
           {errors.category && (
             <p className="text-xs font-semibold text-red-500">{errors.category.message}</p>
           )}

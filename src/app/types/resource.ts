@@ -29,3 +29,15 @@ export interface LearningResource {
   language?: string;
   certificateAvailable?: boolean;
 }
+
+export const ALLOWED_CATEGORIES = [
+  "Web Development",
+  "AI & Machine Learning",
+  "Design & CSS",
+  "Backend Development",
+  "Data Science",
+  "DevOps",
+  "Cyber Security",
+] as const;
+
+export type CategoryType = typeof ALLOWED_CATEGORIES[number];

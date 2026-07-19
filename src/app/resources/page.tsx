@@ -11,8 +11,7 @@ import Pagination from "@/app/components/resources/pagination";
 import EmptyResourcesState from "@/app/components/resources/empty-resources-state";
 import ResourceCard from "@/app/components/resources/resource-card";
 import ResourceCardSkeleton from "@/app/components/resources/resource-card-skeleton";
-import { mockResources } from "@/lib/mock-resources";
-import { LearningResource } from "@/app/types/resource";
+import { LearningResource, ALLOWED_CATEGORIES } from "@/app/types/resource";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -25,9 +24,9 @@ export default function ResourcesPage() {
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Categories list extracted from mock data to keep filter populated
+  // Categories list derived from shared ALLOWED_CATEGORIES list
   const categories = useMemo(() => {
-    return Array.from(new Set(mockResources.map((r) => r.category))).sort();
+    return [...ALLOWED_CATEGORIES].sort();
   }, []);
 
   const levels = ["beginner", "intermediate", "advanced"];
