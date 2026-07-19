@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { PlayCircle, Bookmark, BookmarkCheck, ArrowLeft, HelpCircle } from "lucide-react";
+import { PlayCircle, Bookmark, BookmarkCheck, ArrowLeft, HelpCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
@@ -12,18 +12,26 @@ import ResourceOverview from "@/app/components/resources/resource-overview";
 import ResourceSpecifications from "@/app/components/resources/resource-specifications";
 import ReviewsSection from "@/app/components/resources/reviews-section";
 import RelatedResources from "@/app/components/resources/related-resources";
+import ResourceDetailsSkeleton from "@/app/components/resources/resource-details-skeleton";
 
 export default function ResourceDetailsPage() {
   const params = useParams();
   const resourceId = params.resourceId as string;
 
   // Fetch resource details from Express backend
-  const { data: response, isLoading: isQueryLoading } = useQuery({
+  const {
+    data: response,
+    isLoading: isQueryLoading,
+    error,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["resource", resourceId],
     queryFn: async () => {
       const res = await axios.get(`http://localhost:5000/api/v1/resources/${resourceId}`);
       return res.data;
     },
+    retry: false,
   });
 
   const resource = response?.data;
@@ -33,15 +41,97 @@ export default function ResourceDetailsPage() {
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [enrollSuccess, setEnrollSuccess] = useState(false);
 
+  // Render Details Skeleton Loader
   if (isQueryLoading) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
-      </div>
+      <main className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <ResourceDetailsSkeleton />
+        </div>
+      </main>
     );
   }
 
-  // If resource not found, render a premium Not Found view
+  // Handle 404 (Not Found) vs Server/Network Offline states
+  if (error) {
+    const is404 = axios.isAxiosError(error) && error.response?.status === 404;
+
+    if (is404) {
+      return (
+        <main className="min-h-[70vh] bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+          <div className="text-center bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 max-w-lg w-full shadow-lg">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500 mb-6">
+              <HelpCircle className="h-8 w-8" />
+            </div>
+            
+            <h1 className="text-2xl font-black text-slate-900">
+              Resource Not Found
+            </h1>
+            
+            <p className="mt-3 text-sm text-slate-500 leading-relaxed">
+              The resource ID <span className="font-semibold text-slate-700">`{resourceId}`</span> does not exist or has been removed from our catalog. Please check your URL or explore other catalog resources.
+            </p>
+            
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/resources"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition duration-200 hover:bg-indigo-700 outline-none"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Catalog
+              </Link>
+            </div>
+          </div>
+        </main>
+      );
+    }
+
+    // General connection issue or database offline
+    let errorMsg = "Unable to connect to the catalog service. Please check your connection and try again.";
+    if (axios.isAxiosError(error) && error.response?.status === 500) {
+      errorMsg = "An unexpected server error occurred. Please try again later.";
+    }
+
+    return (
+      <main className="min-h-[70vh] bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center bg-white border border-slate-200 rounded-3xl p-8 sm:p-12 max-w-lg w-full shadow-lg space-y-6">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50 text-red-500 mb-2">
+            <AlertTriangle className="h-8 w-8 animate-pulse" />
+          </div>
+          
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-900">
+              Connection Problem
+            </h1>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              {errorMsg}
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <button
+              type="button"
+              onClick={() => void refetch()}
+              disabled={isRefetching}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:opacity-60 outline-none"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+              Try Again
+            </button>
+            
+            <Link
+              href="/resources"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition outline-none"
+            >
+              Back to Catalog
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Not found fallback when data returns empty but no query error was raised
   if (!resource) {
     return (
       <main className="min-h-[70vh] bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

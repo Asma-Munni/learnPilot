@@ -1,5 +1,9 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import ResourceCard from "@/app/components/resources/resource-card";
-import { mockResources } from "@/lib/mock-resources";
+import { LearningResource } from "@/app/types/resource";
 
 interface RelatedResourcesProps {
   currentResourceId: string;
@@ -10,9 +14,21 @@ export default function RelatedResources({
   currentResourceId,
   category,
 }: RelatedResourcesProps) {
-  // Query resources in same category, exclude active item, cap at 4 results
-  const related = mockResources
-    .filter((res) => res.category === category && res.resourceId !== currentResourceId)
+  const { data: response } = useQuery({
+    queryKey: ["related-resources", category, currentResourceId],
+    queryFn: async () => {
+      const res = await axios.get("http://localhost:5000/api/v1/resources", {
+        params: { category, limit: 10 },
+      });
+      return res.data;
+    },
+  });
+
+  const allResources = (response?.data || []) as LearningResource[];
+
+  // Filter out the current resource and select up to 4 matches
+  const related = allResources
+    .filter((res) => res.resourceId !== currentResourceId)
     .slice(0, 4);
 
   if (related.length === 0) return null;
