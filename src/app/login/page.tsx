@@ -17,7 +17,7 @@ import { signIn } from "@/lib/auth-client";
 
 const demoCredentials = {
   email: "demo@learnpilot.com",
-  password: "Demo@123456",
+  password: "Demo@12345",
 };
 
 export default function LoginPage() {
