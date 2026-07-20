@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Search, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { apiClient } from "@/lib/api-client";
 import { LearningResource } from "@/app/types/resource";
 
 // Import custom sub-components
@@ -24,10 +25,13 @@ export default function ManageResourcesPage() {
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "published" | "draft"
+  >("all");
 
   // Deletion States
-  const [deleteTarget, setDeleteTarget] = useState<LearningResource | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<LearningResource | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
@@ -49,9 +53,13 @@ export default function ManageResourcesPage() {
   } = useQuery({
     queryKey: ["instructor-resources"],
     queryFn: async () => {
-      const res = await axios.get("http://localhost:5000/api/v1/resources/my-resources", {
-        withCredentials: true,
-      });
+      const res = await apiClient.get(
+        "/api/v1/resources/my-resources",
+        {
+          withCredentials: true,
+        }
+      );
+
       return res.data;
     },
     enabled: !!session && session.user.role === "instructor",
@@ -64,8 +72,13 @@ export default function ManageResourcesPage() {
   // Combined search and status filtering
   const filteredResources = useMemo(() => {
     return resources.filter((item) => {
-      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchesSearch = item.title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || item.status === statusFilter;
+
       return matchesSearch && matchesStatus;
     });
   }, [resources, searchQuery, statusFilter]);
@@ -87,22 +100,34 @@ export default function ManageResourcesPage() {
     setDeleteSuccess(null);
 
     try {
-      await axios.delete(`http://localhost:5000/api/v1/resources/${deleteTarget.resourceId}`, {
-        withCredentials: true,
+      await apiClient.delete(
+        `/api/v1/resources/${deleteTarget.resourceId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      setDeleteSuccess(
+        `"${deleteTarget.title}" was deleted successfully.`
+      );
+
+      // Invalidate queries to refresh caching datasets
+      await queryClient.invalidateQueries({
+        queryKey: ["instructor-resources"],
       });
 
-      setDeleteSuccess(`"${deleteTarget.title}" was deleted successfully.`);
-      
-      // Invalidate queries to refresh caching datasets
-      await queryClient.invalidateQueries({ queryKey: ["instructor-resources"] });
-      await queryClient.invalidateQueries({ queryKey: ["resources"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["resources"],
+      });
 
       setDeleteTarget(null);
     } catch (err) {
       let msg = "Failed to delete resource.";
+
       if (axios.isAxiosError(err)) {
         msg = err.response?.data?.message || err.message || msg;
       }
+
       setDeleteError(msg);
     } finally {
       setIsDeleting(false);
@@ -110,7 +135,12 @@ export default function ManageResourcesPage() {
   };
 
   // Render Loader Skeleton
-  if (isSessionPending || (session && session.user.role === "instructor" && isQueryLoading)) {
+  if (
+    isSessionPending ||
+    (session &&
+      session.user.role === "instructor" &&
+      isQueryLoading)
+  ) {
     return (
       <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -133,7 +163,6 @@ export default function ManageResourcesPage() {
   return (
     <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        
         {/* Dynamic Header */}
         <ManageResourcesHeader />
 
@@ -141,7 +170,9 @@ export default function ManageResourcesPage() {
         {deleteSuccess && (
           <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 animate-in fade-in duration-200">
             <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+
             <div className="text-sm font-bold">{deleteSuccess}</div>
+
             <button
               type="button"
               onClick={() => setDeleteSuccess(null)}
@@ -155,7 +186,9 @@ export default function ManageResourcesPage() {
         {deleteError && (
           <div className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 animate-in fade-in duration-200">
             <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+
             <div className="text-sm font-bold">{deleteError}</div>
+
             <button
               type="button"
               onClick={() => setDeleteError(null)}
@@ -170,8 +203,13 @@ export default function ManageResourcesPage() {
         {error && (
           <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800">
             <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+
             <div className="text-sm font-semibold">
-              Failed to load your resources: {axios.isAxiosError(error) ? error.response?.data?.message || error.message : "Network error"}
+              Failed to load your resources:{" "}
+              {axios.isAxiosError(error)
+                ? error.response?.data?.message ||
+                  error.message
+                : "Network error"}
             </div>
           </div>
         )}
@@ -182,6 +220,7 @@ export default function ManageResourcesPage() {
             {/* Title Search Input */}
             <div className="relative w-full sm:flex-1">
               <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
               <input
                 type="text"
                 value={searchQuery}
@@ -189,6 +228,7 @@ export default function ManageResourcesPage() {
                 placeholder="Search resources by title..."
                 className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
               />
+
               {searchQuery && (
                 <button
                   type="button"
@@ -205,7 +245,14 @@ export default function ManageResourcesPage() {
               <select
                 id="statusFilter"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as "all" | "published" | "draft")}
+                onChange={(e) =>
+                  setStatusFilter(
+                    e.target.value as
+                      | "all"
+                      | "published"
+                      | "draft"
+                  )
+                }
                 className="w-full sm:w-40 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition"
               >
                 <option value="all">All Statuses</option>
@@ -251,7 +298,10 @@ export default function ManageResourcesPage() {
             </div>
           </>
         ) : (
-          <EmptyManageResourcesState isFiltered={true} onClear={handleClearFilters} />
+          <EmptyManageResourcesState
+            isFiltered={true}
+            onClear={handleClearFilters}
+          />
         )}
 
         {/* Delete Confirmation Modal */}
@@ -262,7 +312,6 @@ export default function ManageResourcesPage() {
           onConfirm={handleDeleteConfirm}
           onClose={() => setDeleteTarget(null)}
         />
-
       </div>
     </main>
   );

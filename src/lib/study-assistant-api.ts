@@ -1,23 +1,19 @@
+import {
+  StudyAssistantChatRequest,
+  StudyAssistantChatResponse,
+  StudyAssistantConversationListResponse,
+  StudyAssistantConversationResponse,
+} from "@/app/types/study-assistant";
 
-import { StudyAssistantChatRequest, StudyAssistantChatResponse, StudyAssistantConversationListResponse, StudyAssistantConversationResponse } from "@/app/types/study-assistant";
-import axios from "axios";
-
-
-
-const serverUrl =
-  process.env.NEXT_PUBLIC_SERVER_URL ||
-  "http://localhost:5000";
+import { apiClient } from "@/lib/api-client";
 
 export async function sendStudyAssistantMessage(
   payload: StudyAssistantChatRequest,
 ): Promise<StudyAssistantChatResponse> {
   const response =
-    await axios.post<StudyAssistantChatResponse>(
-      `${serverUrl}/api/v1/ai/study-assistant/chat`,
+    await apiClient.post<StudyAssistantChatResponse>(
+      "/api/v1/ai/study-assistant/chat",
       payload,
-      {
-        withCredentials: true,
-      },
     );
 
   return response.data;
@@ -27,24 +23,17 @@ export async function getStudyAssistantConversation(
   conversationId: string,
 ): Promise<StudyAssistantConversationResponse> {
   const response =
-    await axios.get<StudyAssistantConversationResponse>(
-      `${serverUrl}/api/v1/ai/study-assistant/conversations/${conversationId}`,
-      {
-        withCredentials: true,
-      },
+    await apiClient.get<StudyAssistantConversationResponse>(
+      `/api/v1/ai/study-assistant/conversations/${conversationId}`,
     );
 
   return response.data;
 }
 
-export async function getStudyAssistantConversations():
-Promise<StudyAssistantConversationListResponse> {
+export async function getStudyAssistantConversations(): Promise<StudyAssistantConversationListResponse> {
   const response =
-    await axios.get<StudyAssistantConversationListResponse>(
-      `${serverUrl}/api/v1/ai/study-assistant/conversations`,
-      {
-        withCredentials: true,
-      },
+    await apiClient.get<StudyAssistantConversationListResponse>(
+      "/api/v1/ai/study-assistant/conversations",
     );
 
   return response.data;

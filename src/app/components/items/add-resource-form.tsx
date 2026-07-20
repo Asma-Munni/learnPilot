@@ -11,6 +11,8 @@ import { CheckCircle2, AlertTriangle, Eye, Loader2, Sparkles } from "lucide-reac
 import FormSection from "./form-section";
 import ArrayInputField from "./array-input-field";
 import { ALLOWED_CATEGORIES } from "@/app/types/resource";
+import axios from "axios";
+import { apiClient } from "@/lib/api-client";
 
 const formSchema = z.object({
   title: z
@@ -111,9 +113,10 @@ export default function AddResourceForm() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setServerError(null);
-      const response = await axios.post("http://localhost:5000/api/v1/resources", values, {
-        withCredentials: true,
-      });
+      const response = await apiClient.post(
+  "/api/v1/resources",
+  values,
+);
 
       if (response.data.success) {
         setSuccessData({

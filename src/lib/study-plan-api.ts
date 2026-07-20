@@ -3,7 +3,7 @@ import axios from "axios";
 
 const serverUrl =
   process.env.NEXT_PUBLIC_SERVER_URL ||
-  "http://localhost:5000";
+  "http://";
 
 export type GetStudyPlansParams = {
   page?: number;

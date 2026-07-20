@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import ResourceSearch from "@/app/components/resources/resource-search";
 import ResourceFilters from "@/app/components/resources/resource-filters";
 import ResourceSort from "@/app/components/resources/resource-sort";
@@ -12,6 +11,7 @@ import EmptyResourcesState from "@/app/components/resources/empty-resources-stat
 import ResourceCard from "@/app/components/resources/resource-card";
 import ResourceCardSkeleton from "@/app/components/resources/resource-card-skeleton";
 import { LearningResource, ALLOWED_CATEGORIES } from "@/app/types/resource";
+import { apiClient } from "@/lib/api-client";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -81,7 +81,10 @@ export default function ResourcesPage() {
       if (selectedLevel !== "all") params.level = selectedLevel;
       if (selectedType !== "all") params.resourceType = selectedType;
 
-      const res = await axios.get("http://localhost:5000/api/v1/resources", { params });
+      const res = await apiClient.get("/api/v1/resources", {
+        params,
+      });
+
       return res.data;
     },
   });
