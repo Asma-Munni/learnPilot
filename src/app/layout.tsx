@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import QueryProvider from "./providers/query-provider";
-import Navbar from "./components/shared/page";
+import Navbar from "./components/shared/navbar";
 import Footer from "./components/shared/footer";
 
 export const metadata: Metadata = {

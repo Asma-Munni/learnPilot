@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bot,
   BrainCircuit,
   ChevronDown,
   LayoutDashboard,
@@ -13,12 +14,21 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { authClient } from "@/lib/auth-client";
 
-type UserRole = "learner" | "instructor";
+type UserRole =
+  | "learner"
+  | "instructor";
 
 type NavLink = {
   label: string;
@@ -58,6 +68,10 @@ const learnerLinks: NavLink[] = [
     href: "/ai/study-planner",
   },
   {
+    label: "AI Assistant",
+    href: "/ai/study-assistant",
+  },
+  {
     label: "Recommendations",
     href: "/ai/recommendations",
   },
@@ -88,22 +102,33 @@ const instructorLinks: NavLink[] = [
     label: "AI Planner",
     href: "/ai/study-planner",
   },
+  {
+    label: "AI Assistant",
+    href: "/ai/study-assistant",
+  },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const { data: session, isPending } =
-    authClient.useSession();
+  const {
+    data: session,
+    isPending,
+  } = authClient.useSession();
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] =
-    useState(false);
+  const [
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+  ] = useState(false);
 
-  const [isProfileMenuOpen, setIsProfileMenuOpen] =
-    useState(false);
+  const [
+    isProfileMenuOpen,
+    setIsProfileMenuOpen,
+  ] = useState(false);
 
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef =
+    useRef<HTMLDivElement>(null);
 
   const hiddenRoutes = [
     "/login",
@@ -111,13 +136,18 @@ export default function Navbar() {
     "/forgot-password",
   ];
 
-  const shouldHideNavbar = hiddenRoutes.some(
-    (route) =>
-      pathname === route || pathname.startsWith(`${route}/`),
-  );
+  const shouldHideNavbar =
+    hiddenRoutes.some(
+      (route) =>
+        pathname === route ||
+        pathname.startsWith(
+          `${route}/`,
+        ),
+    );
 
   const userRole: UserRole =
-    session?.user && "role" in session.user
+    session?.user &&
+    "role" in session.user
       ? (session.user.role as UserRole)
       : "learner";
 
@@ -128,18 +158,25 @@ export default function Navbar() {
     : publicLinks;
 
   const userInitial =
-    session?.user.name?.charAt(0).toUpperCase() || "U";
+    session?.user.name
+      ?.charAt(0)
+      .toUpperCase() || "U";
 
   useEffect(() => {
-    const handle = requestAnimationFrame(() => {
-      setIsMobileMenuOpen(false);
-      setIsProfileMenuOpen(false);
-    });
-    return () => cancelAnimationFrame(handle);
+    const handle =
+      requestAnimationFrame(() => {
+        setIsMobileMenuOpen(false);
+        setIsProfileMenuOpen(false);
+      });
+
+    return () =>
+      cancelAnimationFrame(handle);
   }, [pathname]);
 
   useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
+    const handleOutsideClick = (
+      event: MouseEvent,
+    ) => {
       if (
         profileMenuRef.current &&
         !profileMenuRef.current.contains(
@@ -169,6 +206,7 @@ export default function Navbar() {
         onSuccess: () => {
           setIsProfileMenuOpen(false);
           setIsMobileMenuOpen(false);
+
           router.push("/login");
           router.refresh();
         },
@@ -176,14 +214,18 @@ export default function Navbar() {
     });
   };
 
-  const isActiveLink = (href: string) => {
+  const isActiveLink = (
+    href: string,
+  ) => {
     if (href === "/") {
       return pathname === "/";
     }
 
     return (
       pathname === href ||
-      pathname.startsWith(`${href}/`)
+      pathname.startsWith(
+        `${href}/`,
+      )
     );
   };
 
@@ -217,13 +259,16 @@ export default function Navbar() {
         {/* Desktop navigation */}
         <div className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => {
-            const active = isActiveLink(link.href);
+            const active =
+              isActiveLink(
+                link.href,
+              );
 
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`rounded-lg px-3.5 py-2 text-sm font-semibold transition ${
+                className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
                   active
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"
@@ -241,7 +286,8 @@ export default function Navbar() {
             <div className="h-10 w-28 animate-pulse rounded-xl bg-slate-200" />
           ) : session ? (
             <>
-              {userRole === "instructor" && (
+              {userRole ===
+                "instructor" && (
                 <Link
                   href="/items/add"
                   className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
@@ -259,15 +305,23 @@ export default function Navbar() {
                   type="button"
                   onClick={() =>
                     setIsProfileMenuOpen(
-                      (current) => !current,
+                      (current) =>
+                        !current,
                     )
                   }
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-1.5 pr-3 transition hover:border-indigo-300 hover:bg-slate-50"
                 >
-                  {session.user.image ? (
+                  {session.user
+                    .image ? (
                     <img
-                      src={session.user.image}
-                      alt={session.user.name}
+                      src={
+                        session.user
+                          .image
+                      }
+                      alt={
+                        session.user
+                          .name
+                      }
                       className="h-9 w-9 rounded-lg object-cover"
                     />
                   ) : (
@@ -278,7 +332,10 @@ export default function Navbar() {
 
                   <div className="max-w-32 text-left">
                     <p className="truncate text-sm font-bold text-slate-900">
-                      {session.user.name}
+                      {
+                        session.user
+                          .name
+                      }
                     </p>
 
                     <p className="truncate text-xs capitalize text-slate-500">
@@ -299,11 +356,17 @@ export default function Navbar() {
                   <div className="absolute right-0 top-[calc(100%+0.75rem)] w-64 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl">
                     <div className="border-b border-slate-100 px-3 py-3">
                       <p className="truncate text-sm font-bold text-slate-900">
-                        {session.user.name}
+                        {
+                          session.user
+                            .name
+                        }
                       </p>
 
                       <p className="mt-1 truncate text-xs text-slate-500">
-                        {session.user.email}
+                        {
+                          session.user
+                            .email
+                        }
                       </p>
 
                       <span className="mt-2 inline-flex rounded-full bg-cyan-50 px-2.5 py-1 text-xs font-bold capitalize text-cyan-700">
@@ -335,11 +398,21 @@ export default function Navbar() {
                         }
                         label="AI Study Planner"
                       />
+
+                      <ProfileLink
+                        href="/ai/study-assistant"
+                        icon={
+                          <Bot className="h-4 w-4" />
+                        }
+                        label="AI Study Assistant"
+                      />
                     </div>
 
                     <button
                       type="button"
-                      onClick={handleLogout}
+                      onClick={
+                        handleLogout
+                      }
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                     >
                       <LogOut className="h-4 w-4" />
@@ -373,7 +446,10 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() =>
-            setIsMobileMenuOpen((current) => !current)
+            setIsMobileMenuOpen(
+              (current) =>
+                !current,
+            )
           }
           className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-100 lg:hidden"
           aria-label="Toggle navigation menu"
@@ -393,8 +469,12 @@ export default function Navbar() {
             <div className="mb-5 flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
               {session.user.image ? (
                 <img
-                  src={session.user.image}
-                  alt={session.user.name}
+                  src={
+                    session.user.image
+                  }
+                  alt={
+                    session.user.name
+                  }
                   className="h-12 w-12 rounded-xl object-cover"
                 />
               ) : (
@@ -409,7 +489,10 @@ export default function Navbar() {
                 </p>
 
                 <p className="truncate text-xs text-slate-500">
-                  {session.user.email}
+                  {
+                    session.user
+                      .email
+                  }
                 </p>
 
                 <p className="mt-1 text-xs font-bold capitalize text-cyan-700">
@@ -421,7 +504,10 @@ export default function Navbar() {
 
           <div className="space-y-1">
             {navLinks.map((link) => {
-              const active = isActiveLink(link.href);
+              const active =
+                isActiveLink(
+                  link.href,
+                );
 
               return (
                 <Link
@@ -450,9 +536,19 @@ export default function Navbar() {
                   My Profile
                 </Link>
 
+                <Link
+                  href="/ai/study-assistant"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <Bot className="h-4 w-4" />
+                  AI Study Assistant
+                </Link>
+
                 <button
                   type="button"
-                  onClick={handleLogout}
+                  onClick={
+                    handleLogout
+                  }
                   className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="h-4 w-4" />
