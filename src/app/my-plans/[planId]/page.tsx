@@ -6,11 +6,13 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import {
+  Archive,
   ArrowLeft,
   BookOpenCheck,
   CalendarDays,
   CheckCircle2,
   Clock3,
+  RotateCcw,
   Target,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +22,9 @@ import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import {
   getStudyPlanById,
+  updateStudyPlanStatus,
   updateStudyTaskStatus,
+  type UpdateStudyPlanStatus,
   type UpdateStudyTaskStatus,
 } from "@/lib/study-plan-api";
 
@@ -53,7 +57,7 @@ export default function StudyPlanDetailsPage() {
     retry: 1,
   });
 
-  const updateStatusMutation = useMutation({
+  const updateTaskMutation = useMutation({
     mutationFn: ({
       taskId,
       status,
@@ -64,6 +68,27 @@ export default function StudyPlanDetailsPage() {
       updateStudyTaskStatus(
         planId,
         taskId,
+        status,
+      ),
+
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        ["study-plan", planId],
+        response,
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: ["study-plans"],
+      });
+    },
+  });
+
+  const updatePlanMutation = useMutation({
+    mutationFn: (
+      status: UpdateStudyPlanStatus,
+    ) =>
+      updateStudyPlanStatus(
+        planId,
         status,
       ),
 
@@ -125,6 +150,15 @@ export default function StudyPlanDetailsPage() {
 
   const plan = data.data;
 
+  const handlePlanStatusUpdate = () => {
+    const nextStatus: UpdateStudyPlanStatus =
+      plan.status === "archived"
+        ? "active"
+        : "archived";
+
+    updatePlanMutation.mutate(nextStatus);
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -163,64 +197,103 @@ export default function StudyPlanDetailsPage() {
 
               <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <PlanMetric
-                  icon={<CalendarDays className="h-5 w-5" />}
+                  icon={
+                    <CalendarDays className="h-5 w-5" />
+                  }
                   label="Deadline"
                   value={formatDate(plan.deadline)}
                 />
 
                 <PlanMetric
-                  icon={<Clock3 className="h-5 w-5" />}
+                  icon={
+                    <Clock3 className="h-5 w-5" />
+                  }
                   label="Daily Study"
                   value={`${plan.dailyStudyMinutes} min`}
                 />
 
                 <PlanMetric
-                  icon={<BookOpenCheck className="h-5 w-5" />}
+                  icon={
+                    <BookOpenCheck className="h-5 w-5" />
+                  }
                   label="Study Days"
                   value={`${plan.daysPerWeek} days/week`}
                 />
 
                 <PlanMetric
-                  icon={<Target className="h-5 w-5" />}
+                  icon={
+                    <Target className="h-5 w-5" />
+                  }
                   label="Tasks"
                   value={`${plan.tasks.length}`}
                 />
               </div>
             </div>
 
-            <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-5 lg:w-64">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-slate-300">
-                  Overall progress
-                </span>
+            <div className="w-full space-y-4 lg:w-64">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-slate-300">
+                    Overall progress
+                  </span>
 
-                <span className="text-xl font-bold text-cyan-300">
-                  {plan.progressPercentage}%
-                </span>
+                  <span className="text-xl font-bold text-cyan-300">
+                    {plan.progressPercentage}%
+                  </span>
+                </div>
+
+                <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-indigo-500 transition-all"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          0,
+                          plan.progressPercentage,
+                        ),
+                      )}%`,
+                    }}
+                  />
+                </div>
+
+                <p className="mt-4 text-xs leading-5 text-slate-400">
+                  Complete scheduled tasks to increase
+                  your study-plan progress.
+                </p>
               </div>
 
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-indigo-500 transition-all"
-                  style={{
-                    width: `${Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        plan.progressPercentage,
-                      ),
-                    )}%`,
-                  }}
-                />
-              </div>
+              <button
+                type="button"
+                disabled={updatePlanMutation.isPending}
+                onClick={handlePlanStatusUpdate}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {plan.status === "archived" ? (
+                  <RotateCcw className="h-4 w-4" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
 
-              <p className="mt-4 text-xs leading-5 text-slate-400">
-                Complete scheduled tasks to increase your
-                study-plan progress.
-              </p>
+                {updatePlanMutation.isPending
+                  ? "Updating..."
+                  : plan.status === "archived"
+                    ? "Reactivate Plan"
+                    : "Archive Plan"}
+              </button>
             </div>
           </div>
         </section>
+
+        {updatePlanMutation.isError && (
+          <div
+            aria-live="polite"
+            className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
+          >
+            Study plan status could not be updated.
+            Please try again.
+          </div>
+        )}
 
         <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
@@ -252,15 +325,13 @@ export default function StudyPlanDetailsPage() {
         </section>
 
         <section className="mt-8">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-cyan-600">
-              Roadmap
-            </p>
+          <p className="text-sm font-bold uppercase tracking-wider text-cyan-600">
+            Roadmap
+          </p>
 
-            <h2 className="mt-2 text-2xl font-bold text-slate-950">
-              Learning milestones
-            </h2>
-          </div>
+          <h2 className="mt-2 text-2xl font-bold text-slate-950">
+            Learning milestones
+          </h2>
 
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             {plan.milestones.map(
@@ -298,17 +369,15 @@ export default function StudyPlanDetailsPage() {
         </section>
 
         <section className="mt-10">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
-              Schedule
-            </p>
+          <p className="text-sm font-bold uppercase tracking-wider text-indigo-600">
+            Schedule
+          </p>
 
-            <h2 className="mt-2 text-2xl font-bold text-slate-950">
-              Study tasks
-            </h2>
-          </div>
+          <h2 className="mt-2 text-2xl font-bold text-slate-950">
+            Study tasks
+          </h2>
 
-          {updateStatusMutation.isError && (
+          {updateTaskMutation.isError && (
             <div
               aria-live="polite"
               className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700"
@@ -321,9 +390,13 @@ export default function StudyPlanDetailsPage() {
           <div className="mt-5 space-y-4">
             {plan.tasks.map((task, index) => {
               const isUpdatingTask =
-                updateStatusMutation.isPending &&
-                updateStatusMutation.variables
+                updateTaskMutation.isPending &&
+                updateTaskMutation.variables
                   ?.taskId === task.taskId;
+
+              const updatingStatus =
+                updateTaskMutation.variables
+                  ?.status;
 
               return (
                 <article
@@ -372,21 +445,16 @@ export default function StudyPlanDetailsPage() {
 
                         <span className="flex items-center gap-2">
                           <Clock3 className="h-4 w-4 text-cyan-600" />
-                          {task.estimatedMinutes}{" "}
-                          minutes
+                          {task.estimatedMinutes} minutes
                         </span>
 
                         {task.resourceIds.length >
                           0 && (
                           <span className="flex items-center gap-2">
                             <BookOpenCheck className="h-4 w-4 text-amber-600" />
-                            {
-                              task.resourceIds
-                                .length
-                            }{" "}
+                            {task.resourceIds.length}{" "}
                             linked resource
-                            {task.resourceIds
-                              .length > 1
+                            {task.resourceIds.length > 1
                               ? "s"
                               : ""}
                           </span>
@@ -399,71 +467,61 @@ export default function StudyPlanDetailsPage() {
                           <button
                             type="button"
                             disabled={
-                              updateStatusMutation.isPending
+                              updateTaskMutation.isPending
                             }
                             onClick={() =>
-                              updateStatusMutation.mutate(
-                                {
-                                  taskId:
-                                    task.taskId,
-                                  status:
-                                    "completed",
-                                },
-                              )
+                              updateTaskMutation.mutate({
+                                taskId: task.taskId,
+                                status: "completed",
+                              })
                             }
                             className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {isUpdatingTask
+                            {isUpdatingTask &&
+                            updatingStatus ===
+                              "completed"
                               ? "Updating..."
                               : "Mark Completed"}
                           </button>
                         )}
 
-                        {task.status !==
-                          "skipped" && (
+                        {task.status !== "skipped" && (
                           <button
                             type="button"
                             disabled={
-                              updateStatusMutation.isPending
+                              updateTaskMutation.isPending
                             }
                             onClick={() =>
-                              updateStatusMutation.mutate(
-                                {
-                                  taskId:
-                                    task.taskId,
-                                  status:
-                                    "skipped",
-                                },
-                              )
+                              updateTaskMutation.mutate({
+                                taskId: task.taskId,
+                                status: "skipped",
+                              })
                             }
                             className="rounded-lg bg-slate-700 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {isUpdatingTask
+                            {isUpdatingTask &&
+                            updatingStatus === "skipped"
                               ? "Updating..."
                               : "Skip Task"}
                           </button>
                         )}
 
-                        {task.status !==
-                          "pending" && (
+                        {task.status !== "pending" && (
                           <button
                             type="button"
                             disabled={
-                              updateStatusMutation.isPending
+                              updateTaskMutation.isPending
                             }
                             onClick={() =>
-                              updateStatusMutation.mutate(
-                                {
-                                  taskId:
-                                    task.taskId,
-                                  status:
-                                    "pending",
-                                },
-                              )
+                              updateTaskMutation.mutate({
+                                taskId: task.taskId,
+                                status: "pending",
+                              })
                             }
                             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            {isUpdatingTask
+                            {isUpdatingTask &&
+                            updatingStatus === "pending"
                               ? "Updating..."
                               : "Reset to Pending"}
                           </button>
@@ -534,9 +592,7 @@ function StudyPlanDetailsSkeleton() {
     <main className="min-h-screen animate-pulse bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-7xl">
         <div className="h-5 w-36 rounded bg-slate-200" />
-
         <div className="mt-6 h-80 rounded-3xl bg-slate-900" />
-
         <div className="mt-8 h-40 rounded-2xl bg-slate-200" />
 
         <div className="mt-8 grid gap-5 md:grid-cols-2">
