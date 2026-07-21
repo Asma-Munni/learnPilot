@@ -34,6 +34,8 @@ if (!googleClientSecret) {
   throw new Error("GOOGLE_CLIENT_SECRET is not configured");
 }
 
+const cleanBetterAuthURL = betterAuthURL.trim().replace(/\/+$/, "");
+
 declare global {
   // eslint-disable-next-line no-var
   var _mongoClient: MongoClient | undefined;
@@ -51,14 +53,19 @@ if (process.env.NODE_ENV === "development") {
 
 const db: Db = client.db(databaseName);
 
-export const auth = betterAuth({
-  secret: betterAuthSecret,
-  baseURL: betterAuthURL,
-
-  trustedOrigins: [
+const trustedOrigins = Array.from(
+  new Set([
     "http://localhost:3000",
     "https://learnpilot-client.vercel.app",
-  ],
+    cleanBetterAuthURL,
+  ])
+);
+
+export const auth = betterAuth({
+  secret: betterAuthSecret,
+  baseURL: cleanBetterAuthURL,
+
+  trustedOrigins,
 
   database: mongodbAdapter(db, {
     client,
@@ -68,8 +75,8 @@ export const auth = betterAuth({
     jwt({
       jwt: {
         expirationTime: "15m",
-        issuer: process.env.AUTH_ISSUER || betterAuthURL,
-        audience: process.env.AUTH_AUDIENCE || "learnpilot-server",
+        issuer: process.env.AUTH_ISSUER?.trim().replace(/\/+$/, "") || cleanBetterAuthURL,
+        audience: process.env.AUTH_AUDIENCE?.trim() || "learnpilot-server",
       },
     }),
   ],
@@ -90,7 +97,7 @@ export const auth = betterAuth({
     additionalFields: {
       role: {
         type: ["learner", "instructor"],
-        required: true,
+        required: false,
         defaultValue: "learner",
         input: true,
       },
