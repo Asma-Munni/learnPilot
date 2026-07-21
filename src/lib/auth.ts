@@ -3,40 +3,69 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGO_DB_URI;
-const databaseName = process.env.MONGO_DB_NAME;
+const databaseName = process.env.MONGO_DB_NAME || "Learn-Pilot";
 
 if (!mongoUri) {
-  throw new Error("MONGO_DB_URI is missing from .env.local");
+  console.warn("⚠️ MONGO_DB_URI is missing from environment variables.");
 }
 
-if (!databaseName) {
-  throw new Error("MONGO_DB_NAME is missing from .env.local");
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-const client = new MongoClient(mongoUri);
+let clientPromise: Promise<MongoClient>;
+
+if (mongoUri) {
+  if (process.env.NODE_ENV === "development") {
+    if (!global._mongoClientPromise) {
+      const clientInstance = new MongoClient(mongoUri);
+      global._mongoClientPromise = clientInstance.connect();
+    }
+    clientPromise = global._mongoClientPromise;
+  } else {
+    const clientInstance = new MongoClient(mongoUri);
+    clientPromise = clientInstance.connect();
+  }
+} else {
+  clientPromise = Promise.reject(new Error("MONGO_DB_URI is not defined."));
+}
+
+export { clientPromise };
+
+const client = new MongoClient(mongoUri || "");
 const db = client.db(databaseName);
+
+const allowedTrustedOrigins = Array.from(
+  new Set([
+    "http://localhost:3000",
+    "https://learnpilot-client.vercel.app",
+    ...(process.env.BETTER_AUTH_URL
+      ? [process.env.BETTER_AUTH_URL.trim().replace(/\/$/, "")]
+      : []),
+  ])
+);
 
 export const auth = betterAuth({
   database: mongodbAdapter(db, {
     client,
   }),
-
-  baseURL: process.env.BETTER_AUTH_URL,
-
-  trustedOrigins: ["http://localhost:3000"],
-
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  secret: process.env.BETTER_AUTH_SECRET,
+  trustedOrigins: allowedTrustedOrigins,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
   },
-
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      enabled: Boolean(
+        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ),
     },
   },
-
   user: {
     additionalFields: {
       role: {
