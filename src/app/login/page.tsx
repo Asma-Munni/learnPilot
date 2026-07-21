@@ -24,7 +24,7 @@ const demoCredentials = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const [isChecking, setIsChecking] = useState(true);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,15 +35,29 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (isSessionPending) {
-      return;
+    let isMounted = true;
+    async function verifySession() {
+      try {
+        const { data } = await authClient.getSession();
+        if (isMounted) {
+          if (data?.user) {
+            router.replace("/dashboard");
+            router.refresh();
+          } else {
+            setIsChecking(false);
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setIsChecking(false);
+        }
+      }
     }
-
-    if (session?.user) {
-      router.replace("/dashboard");
-      router.refresh();
-    }
-  }, [isSessionPending, session, router]);
+    void verifySession();
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   const handleLogin = async (
     event: FormEvent<HTMLFormElement>,
@@ -139,7 +153,7 @@ export default function LoginPage() {
 
   const isSubmitting = isLoading || isGoogleLoading;
 
-  if (isSessionPending || session?.user) {
+  if (isChecking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
         <div className="flex items-center gap-3 font-semibold text-slate-300">

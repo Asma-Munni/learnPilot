@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PlusCircle, Compass } from "lucide-react";
@@ -10,19 +10,54 @@ import InstructorDashboard from "../components/dashboard/instructor-dashboard";
 import LearnerDashboard from "../components/dashboard/learner-dashboard";
 import DashboardSkeleton from "../components/dashboard/dashboard-skeleton";
 
+type SessionUser = {
+  id: string;
+  name?: string;
+  email?: string;
+  image?: string;
+  role?: string;
+};
+
+type SessionData = {
+  user: SessionUser;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const [session, setSession] = useState<SessionData | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    if (isPending) return;
+    let isMounted = true;
 
-    if (!session) {
-      router.push("/login");
+    async function verifySession() {
+      try {
+        const { data } = await authClient.getSession();
+        if (isMounted) {
+          if (data?.user) {
+            setSession(data as unknown as SessionData);
+            setIsChecking(false);
+          } else {
+            setIsChecking(false);
+            router.replace("/login");
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setIsChecking(false);
+          router.replace("/login");
+        }
+      }
     }
-  }, [session, isPending, router]);
 
-  if (isPending) {
+    void verifySession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  if (isChecking) {
     return (
       <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
@@ -32,7 +67,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!session) {
+  if (!session?.user) {
     return null;
   }
 
@@ -43,7 +78,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-7xl space-y-8">
         
         {/* Dynamic Shared Header */}
-        <DashboardHeader user={{ ...session.user, role: session.user.role || "learner" }}>
+        <DashboardHeader user={{ name: session.user.name || "", email: session.user.email || "", role: session.user.role || "learner", image: session.user.image }} >
           {isInstructor ? (
             <Link
               href="/items/add"
