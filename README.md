@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LearnPilot AI - Frontend Application
 
-## Getting Started
+LearnPilot is an AI-powered personalized learning platform built with Next.js, Better Auth, and Express.
 
-First, run the development server:
+---
+
+## 🔑 Demo Accounts
+
+Use the 1-click demo buttons on the login page or enter these credentials:
+
+### 🎓 Demo Learner Account
+* **Email:** `learner.demo@learnpilot.com`
+* **Password:** `Demo@12345`
+* **Role:** `learner`
+
+### 👨‍🏫 Demo Instructor Account
+* **Email:** `instructor.demo@learnpilot.com`
+* **Password:** `Demo@12345`
+* **Role:** `instructor`
+
+---
+
+## 🚀 Seeding Demo Users
+
+To seed or re-verify demo accounts in your local MongoDB database:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run seed:demo-users
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 💻 Local Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Learn More
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { MongoClient } from "mongodb";
+import { MongoClient, Db } from "mongodb";
 
 const mongoUri = process.env.MONGO_DB_URI;
 const databaseName = process.env.MONGO_DB_NAME || "Learn-Pilot";
@@ -11,30 +11,25 @@ if (!mongoUri) {
 
 declare global {
   // eslint-disable-next-line no-var
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
+  var _mongoClient: MongoClient | undefined;
 }
 
-let clientPromise: Promise<MongoClient>;
+let client: MongoClient;
 
 if (mongoUri) {
   if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClientPromise) {
-      const clientInstance = new MongoClient(mongoUri);
-      global._mongoClientPromise = clientInstance.connect();
+    if (!global._mongoClient) {
+      global._mongoClient = new MongoClient(mongoUri);
     }
-    clientPromise = global._mongoClientPromise;
+    client = global._mongoClient;
   } else {
-    const clientInstance = new MongoClient(mongoUri);
-    clientPromise = clientInstance.connect();
+    client = new MongoClient(mongoUri);
   }
 } else {
-  clientPromise = Promise.reject(new Error("MONGO_DB_URI is not defined."));
+  client = new MongoClient("mongodb://localhost:27017/dummy");
 }
 
-export { clientPromise };
-
-const client = new MongoClient(mongoUri || "");
-const db = client.db(databaseName);
+const db: Db = client.db(databaseName);
 
 const allowedTrustedOrigins = Array.from(
   new Set([

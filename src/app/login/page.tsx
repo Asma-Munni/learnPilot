@@ -18,8 +18,8 @@ import { FormEvent, useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
 const demoCredentials = {
-  learner: { email: "demo@learnpilot.com", password: "Demo@12345" },
-  instructor: { email: "instructor@learnpilot.com", password: "Demo@12345" },
+  learner: { email: "learner.demo@learnpilot.com", password: "Demo@12345" },
+  instructor: { email: "instructor.demo@learnpilot.com", password: "Demo@12345" },
 };
 
 export default function LoginPage() {
