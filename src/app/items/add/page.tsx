@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import AccessDenied from "@/app/components/items/access-denied";
 import AddResourceForm from "@/app/components/items/add-resource-form";
 import { PlusCircle } from "lucide-react";
 
@@ -29,10 +28,6 @@ export default function AddItemPage() {
 
   if (!session) {
     return null;
-  }
-
-  if (session.user.role !== "instructor") {
-    return <AccessDenied />;
   }
 
   return (

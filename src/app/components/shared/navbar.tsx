@@ -286,16 +286,13 @@ export default function Navbar() {
             <div className="h-10 w-28 animate-pulse rounded-xl bg-slate-200" />
           ) : session ? (
             <>
-              {userRole ===
-                "instructor" && (
-                <Link
-                  href="/items/add"
-                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  Add Resource
-                </Link>
-              )}
+              <Link
+                href="/items/add"
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add Resource
+              </Link>
 
               <div
                 ref={profileMenuRef}
@@ -389,6 +386,14 @@ export default function Navbar() {
                           <UserRound className="h-4 w-4" />
                         }
                         label="My Profile"
+                      />
+
+                      <ProfileLink
+                        href="/items/manage"
+                        icon={
+                          <PlusCircle className="h-4 w-4" />
+                        }
+                        label="Manage Resources"
                       />
 
                       <ProfileLink
@@ -534,6 +539,22 @@ export default function Navbar() {
                 >
                   <UserRound className="h-4 w-4" />
                   My Profile
+                </Link>
+
+                <Link
+                  href="/items/add"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Add Resource
+                </Link>
+
+                <Link
+                  href="/items/manage"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <UserRound className="h-4 w-4" />
+                  Manage Resources
                 </Link>
 
                 <Link

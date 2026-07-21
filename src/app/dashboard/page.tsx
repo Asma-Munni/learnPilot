@@ -43,7 +43,7 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-7xl space-y-8">
         
         {/* Dynamic Shared Header */}
-        <DashboardHeader user={session.user}>
+        <DashboardHeader user={{ ...session.user, role: session.user.role || "learner" }}>
           {isInstructor ? (
             <Link
               href="/items/add"

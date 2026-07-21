@@ -70,7 +70,7 @@ export const auth = betterAuth({
     additionalFields: {
       role: {
         type: ["learner", "instructor"],
-        required: true,
+        required: false,
         defaultValue: "learner",
         input: true,
       },

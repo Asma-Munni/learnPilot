@@ -16,7 +16,6 @@ import ManageResourceCard from "../../components/items/manage-resource-card";
 import DeleteResourceDialog from "../../components/items/delete-resource-dialog";
 import ManageResourcesSkeleton from "../../components/items/manage-resources-skeleton";
 import EmptyManageResourcesState from "../../components/items/empty-manage-resources-state";
-import AccessDenied from "../../components/items/access-denied";
 
 export default function ManageResourcesPage() {
   const router = useRouter();
@@ -59,7 +58,7 @@ export default function ManageResourcesPage() {
 
       return res.data;
     },
-    enabled: !!session && session.user.role === "instructor",
+    enabled: !!session,
   });
 
   const resources = useMemo(() => {
@@ -131,9 +130,7 @@ export default function ManageResourcesPage() {
   // Render Loader Skeleton
   if (
     isSessionPending ||
-    (session &&
-      session.user.role === "instructor" &&
-      isQueryLoading)
+    (isSessionPending || isQueryLoading)
   ) {
     return (
       <main className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -147,11 +144,6 @@ export default function ManageResourcesPage() {
   // Check login state
   if (!session) {
     return null;
-  }
-
-  // Restrict to instructor role
-  if (session.user.role !== "instructor") {
-    return <AccessDenied />;
   }
 
   return (
