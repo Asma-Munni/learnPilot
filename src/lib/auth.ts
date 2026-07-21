@@ -26,6 +26,8 @@ const betterAuthSecret = getRequiredEnv(
   "BETTER_AUTH_SECRET",
 );
 
+const cleanBetterAuthURL = betterAuthURL;
+
 const googleClientId = getRequiredEnv(
   "GOOGLE_CLIENT_ID",
 );
@@ -41,41 +43,50 @@ if (betterAuthSecret.length < 32) {
 }
 
 declare global {
-  var __learnPilotMongoClient:
-    | MongoClient
-    | undefined;
+  // eslint-disable-next-line no-var
+  var __learnPilotMongoClient: MongoClient | undefined;
 }
 
-const mongoClient =
+const client =
   globalThis.__learnPilotMongoClient ??
   new MongoClient(mongoUri, {
     maxPoolSize: 10,
     minPoolSize: 0,
-    maxIdleTimeMS: 30_000,
-    serverSelectionTimeoutMS: 10_000,
-    connectTimeoutMS: 10_000,
+    maxIdleTimeMS: 30000,
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
   });
 
-globalThis.__learnPilotMongoClient =
-  mongoClient;
+globalThis.__learnPilotMongoClient = client;
 
-const database: Db =
-  mongoClient.db(databaseName);
+const db: Db = client.db(databaseName);
+
+const trustedOrigins = Array.from(
+  new Set([
+    "http://localhost:3000",
+    "https://learnpilot-client.vercel.app",
+    cleanBetterAuthURL,
+  ])
+);
 
 export const auth = betterAuth({
   appName: "LearnPilot AI",
 
   secret: betterAuthSecret,
-  baseURL: betterAuthURL,
+  baseURL: cleanBetterAuthURL,
 
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://learnpilot-client.vercel.app",
-  ],
+  trustedOrigins,
 
-  database: mongodbAdapter(database, {
-    client: mongoClient,
+  database: mongodbAdapter(db, {
+    client,
   }),
+
+  onAPIError: {
+    throw: true,
+    onError: (error, ctx) => {
+      console.error("❌ [Better Auth API Error]:", error);
+    },
+  },
 
   emailAndPassword: {
     enabled: true,
@@ -93,9 +104,7 @@ export const auth = betterAuth({
     jwt({
       jwt: {
         expirationTime: "15m",
-        issuer:
-          process.env.AUTH_ISSUER?.trim() ||
-          betterAuthURL,
+        issuer: process.env.AUTH_ISSUER?.trim().replace(/\/+$/, "") || cleanBetterAuthURL,
         audience:
           process.env.AUTH_AUDIENCE?.trim() ||
           "learnpilot-server",

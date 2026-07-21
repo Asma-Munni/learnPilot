@@ -60,59 +60,80 @@ export default function RegisterPage() {
     isLoading || isGoogleLoading;
 
   useEffect(() => {
-    const completeGoogleRegistration = async () => {
-      const params = new URLSearchParams(
-        window.location.search,
+  const completeGoogleRegistration = async () => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("google") === "error") {
+      localStorage.removeItem("learnpilot-selected-role");
+      setErrorMessage("Google registration failed. Please try again.");
+      return;
+    }
+
+    if (params.get("google") !== "complete") {
+      return;
+    }
+
+    const savedRole = localStorage.getItem(
+      "learnpilot-selected-role",
+    );
+
+    if (
+      savedRole !== "learner" &&
+      savedRole !== "instructor"
+    ) {
+      setErrorMessage(
+        "Your selected role was not found. Please register again.",
       );
+      return;
+    }
 
-      if (params.get("google") === "error") {
-        setErrorMessage(
-          "Google registration failed. Please try again.",
-        );
-
-        return;
-      }
-
-      if (params.get("google") !== "complete") {
-        return;
-      }
-
-      const savedRole = localStorage.getItem(
-        "learnpilot-selected-role",
-      );
+    try {
+      // First confirm that Google OAuth created a real session.
+      const sessionResult = await authClient.getSession();
 
       if (
-        savedRole !== "learner" &&
-        savedRole !== "instructor"
+        sessionResult.error ||
+        !sessionResult.data?.user
       ) {
-        router.replace("/dashboard");
+        setErrorMessage(
+          "Google authentication completed, but no active session was found.",
+        );
         return;
       }
 
-      const { error } =
-        await authClient.updateUser({
-          role: savedRole,
-        });
-
-      localStorage.removeItem(
-        "learnpilot-selected-role",
-      );
+      const { error } = await authClient.updateUser({
+        role: savedRole,
+      });
 
       if (error) {
         setErrorMessage(
           error.message ||
             "Account created, but role update failed.",
         );
-
         return;
       }
 
+      localStorage.removeItem(
+        "learnpilot-selected-role",
+      );
+
+      // The Google user is already logged in.
       router.replace("/dashboard");
       router.refresh();
-    };
+    } catch (error) {
+      console.error(
+        "Google registration completion failed:",
+        error,
+      );
 
-    void completeGoogleRegistration();
-  }, [router]);
+      setErrorMessage(
+        "Could not complete Google registration.",
+      );
+    }
+  };
+
+  void completeGoogleRegistration();
+}, [router]);
 
   const handleRegister = async (
     event: FormEvent<HTMLFormElement>,

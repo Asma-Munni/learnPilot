@@ -1,17 +1,7 @@
-import type { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function handleAuth(
-  request: NextRequest,
-): Promise<Response> {
-  const { auth } = await import("@/lib/auth");
-
-  return auth.handler(request);
-}
-
-export {
-  handleAuth as GET,
-  handleAuth as POST,
-};
+export const { POST, GET } = toNextJsHandler(auth);
