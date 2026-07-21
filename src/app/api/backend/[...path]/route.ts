@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
 const SERVER_API_URL =
   process.env.SERVER_API_URL ||
@@ -14,10 +15,45 @@ async function handleProxy(
     const targetPath = path.join("/");
     const searchParams = req.nextUrl.search;
 
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
+
+    if (!session || !session.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized: Active session required",
+        },
+        { status: 401 }
+      );
+    }
+
+    const jwtResult = await auth.api.signJWT({
+      body: {
+        payload: {
+          sub: session.user.id,
+          email: session.user.email,
+          role: session.user.role || "learner",
+        },
+      },
+    });
+
+    const token = typeof jwtResult === "string" ? jwtResult : jwtResult?.token;
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to generate JWT authentication token",
+        },
+        { status: 500 }
+      );
+    }
+
     const normalizedServerUrl = SERVER_API_URL.trim().replace(/\/$/, "");
     const backendUrl = `${normalizedServerUrl}/api/v1/${targetPath}${searchParams}`;
 
-    // Header forwarding configuration
     const headers = new Headers();
 
     const contentType = req.headers.get("content-type");
@@ -25,19 +61,8 @@ async function handleProxy(
       headers.set("content-type", contentType);
     }
 
-    // Forward session cookie server-to-server
-    const cookie = req.headers.get("cookie");
-    if (cookie) {
-      headers.set("cookie", cookie);
-    }
+    headers.set("authorization", `Bearer ${token}`);
 
-    // Forward Authorization header if present
-    const authHeader = req.headers.get("authorization");
-    if (authHeader) {
-      headers.set("authorization", authHeader);
-    }
-
-    // Read payload for mutation methods
     let body: ArrayBuffer | undefined = undefined;
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
       try {

@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { jwt } from "better-auth/plugins";
 import { MongoClient, Db } from "mongodb";
 
 const mongoUri = process.env.MONGO_DB_URI;
@@ -41,6 +42,12 @@ const allowedTrustedOrigins = Array.from(
   ])
 );
 
+const authIssuer =
+  process.env.AUTH_ISSUER ||
+  process.env.BETTER_AUTH_URL ||
+  "http://localhost:3000";
+const authAudience = process.env.AUTH_AUDIENCE || "learnpilot-server";
+
 export const auth = betterAuth({
   database: mongodbAdapter(db, {
     client,
@@ -48,6 +55,15 @@ export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   secret: process.env.BETTER_AUTH_SECRET,
   trustedOrigins: allowedTrustedOrigins,
+  plugins: [
+    jwt({
+      jwt: {
+        expirationTime: "15m",
+        issuer: authIssuer,
+        audience: authAudience,
+      },
+    }),
+  ],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
