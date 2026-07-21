@@ -13,9 +13,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
-import { signIn } from "@/lib/auth-client";
+import { authClient, signIn } from "@/lib/auth-client";
 
 const demoCredentials = {
   learner: { email: "learner.demo@learnpilot.com", password: "Demo@12345" },
@@ -24,6 +24,7 @@ const demoCredentials = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +33,17 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (isSessionPending) {
+      return;
+    }
+
+    if (session?.user) {
+      router.replace("/dashboard");
+      router.refresh();
+    }
+  }, [isSessionPending, session, router]);
 
   const handleLogin = async (
     event: FormEvent<HTMLFormElement>,
@@ -71,19 +83,26 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
 
     try {
-      const { error } = await signIn.social({
+      const origin = window.location.origin;
+
+      const result = await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
-        errorCallbackURL: "/login",
+        callbackURL: `${origin}/dashboard`,
+        errorCallbackURL: `${origin}/login?google=error`,
       });
 
-      if (error) {
-        setErrorMessage(error.message || "Could not continue with Google.");
+      if (result?.error) {
+        setErrorMessage(
+          result.error.message || "Google login failed.",
+        );
         setIsGoogleLoading(false);
       }
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        console.error("Google sign-in initialization failed", error);
+        console.error(
+          "Google login initialization failed:",
+          error,
+        );
       }
 
       setErrorMessage("Could not continue with Google.");
@@ -119,6 +138,17 @@ export default function LoginPage() {
   };
 
   const isSubmitting = isLoading || isGoogleLoading;
+
+  if (isSessionPending || session?.user) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        <div className="flex items-center gap-3 font-semibold text-slate-300">
+          <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+          <span>Checking your session...</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 px-4 py-10">

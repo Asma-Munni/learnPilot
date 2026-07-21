@@ -85,7 +85,7 @@ export default function RegisterPage() {
         savedRole !== "learner" &&
         savedRole !== "instructor"
       ) {
-        router.replace("/login");
+        router.replace("/dashboard");
         return;
       }
 
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         return;
       }
 
-      router.replace("/login");
+      router.replace("/dashboard");
       router.refresh();
     };
 
