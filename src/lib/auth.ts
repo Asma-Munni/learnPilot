@@ -3,83 +3,79 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { jwt } from "better-auth/plugins";
 import { Db, MongoClient } from "mongodb";
 
-const mongoUri = process.env.MONGO_DB_URI;
-const databaseName = process.env.MONGO_DB_NAME;
-const betterAuthURL = process.env.BETTER_AUTH_URL;
-const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+function getRequiredEnv(name: string): string {
+  const value = process.env[name]?.trim();
 
-if (!mongoUri) {
-  throw new Error("MONGO_DB_URI is not configured");
-}
-
-if (!databaseName) {
-  throw new Error("MONGO_DB_NAME is not configured");
-}
-
-if (!betterAuthURL) {
-  throw new Error("BETTER_AUTH_URL is not configured");
-}
-
-if (!betterAuthSecret) {
-  throw new Error("BETTER_AUTH_SECRET is not configured");
-}
-
-if (!googleClientId) {
-  throw new Error("GOOGLE_CLIENT_ID is not configured");
-}
-
-if (!googleClientSecret) {
-  throw new Error("GOOGLE_CLIENT_SECRET is not configured");
-}
-
-const cleanBetterAuthURL = betterAuthURL.trim().replace(/\/+$/, "");
-
-declare global {
-  // eslint-disable-next-line no-var
-  var _mongoClient: MongoClient | undefined;
-}
-
-let client: MongoClient;
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClient) {
-    global._mongoClient = new MongoClient(mongoUri);
+  if (!value) {
+    throw new Error(
+      `[AUTH_CONFIG] ${name} is not configured`,
+    );
   }
-  client = global._mongoClient;
-} else {
-  client = new MongoClient(mongoUri);
+
+  return value;
 }
 
-const db: Db = client.db(databaseName);
+const mongoUri = getRequiredEnv("MONGO_DB_URI");
+const databaseName = getRequiredEnv("MONGO_DB_NAME");
 
-const trustedOrigins = Array.from(
-  new Set([
-    "http://localhost:3000",
-    "https://learnpilot-client.vercel.app",
-    cleanBetterAuthURL,
-  ])
+const betterAuthURL = getRequiredEnv(
+  "BETTER_AUTH_URL",
+).replace(/\/+$/, "");
+
+const betterAuthSecret = getRequiredEnv(
+  "BETTER_AUTH_SECRET",
 );
 
+const googleClientId = getRequiredEnv(
+  "GOOGLE_CLIENT_ID",
+);
+
+const googleClientSecret = getRequiredEnv(
+  "GOOGLE_CLIENT_SECRET",
+);
+
+if (betterAuthSecret.length < 32) {
+  throw new Error(
+    "[AUTH_CONFIG] BETTER_AUTH_SECRET must contain at least 32 characters",
+  );
+}
+
+declare global {
+  var __learnPilotMongoClient:
+    | MongoClient
+    | undefined;
+}
+
+const mongoClient =
+  globalThis.__learnPilotMongoClient ??
+  new MongoClient(mongoUri, {
+    maxPoolSize: 10,
+    minPoolSize: 0,
+    maxIdleTimeMS: 30_000,
+    serverSelectionTimeoutMS: 10_000,
+    connectTimeoutMS: 10_000,
+  });
+
+globalThis.__learnPilotMongoClient =
+  mongoClient;
+
+const database: Db =
+  mongoClient.db(databaseName);
+
 export const auth = betterAuth({
+  appName: "LearnPilot AI",
+
   secret: betterAuthSecret,
-  baseURL: cleanBetterAuthURL,
+  baseURL: betterAuthURL,
 
-  trustedOrigins,
-
-  database: mongodbAdapter(db, {
-    client,
-  }),
-
-  plugins: [
-    jwt({
-      jwt: {
-        expirationTime: "15m",
-        issuer: process.env.AUTH_ISSUER?.trim().replace(/\/+$/, "") || cleanBetterAuthURL,
-        audience: process.env.AUTH_AUDIENCE?.trim() || "learnpilot-server",
-      },
-    }),
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://learnpilot-client.vercel.app",
   ],
+
+  database: mongodbAdapter(database, {
+    client: mongoClient,
+  }),
 
   emailAndPassword: {
     enabled: true,
@@ -93,14 +89,34 @@ export const auth = betterAuth({
     },
   },
 
+  plugins: [
+    jwt({
+      jwt: {
+        expirationTime: "15m",
+        issuer:
+          process.env.AUTH_ISSUER?.trim() ||
+          betterAuthURL,
+        audience:
+          process.env.AUTH_AUDIENCE?.trim() ||
+          "learnpilot-server",
+      },
+    }),
+  ],
+
   user: {
     additionalFields: {
       role: {
         type: ["learner", "instructor"],
+
+        // Keep this false so older Google users
+        // without a stored role do not break get-session.
         required: false,
+
         defaultValue: "learner",
         input: true,
       },
     },
   },
+
+  
 });

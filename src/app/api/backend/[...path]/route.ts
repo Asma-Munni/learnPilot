@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 const SERVER_API_URL =
   process.env.SERVER_API_URL ||
@@ -11,6 +13,7 @@ async function handleProxy(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const { auth } = await import("@/lib/auth");
     const { path } = await params;
     const targetPath = path.join("/");
     const searchParams = req.nextUrl.search;
