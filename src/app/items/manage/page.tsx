@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Search, X, AlertCircle, CheckCircle2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { apiClient } from "@/lib/api-client";
+import { protectedApiClient } from "@/lib/api-client";
 import { LearningResource } from "@/app/types/resource";
 
 // Import custom sub-components
@@ -53,11 +53,8 @@ export default function ManageResourcesPage() {
   } = useQuery({
     queryKey: ["instructor-resources"],
     queryFn: async () => {
-      const res = await apiClient.get(
-        "/api/v1/resources/my-resources",
-        {
-          withCredentials: true,
-        }
+      const res = await protectedApiClient.get(
+        "/resources/my-resources"
       );
 
       return res.data;
@@ -100,11 +97,8 @@ export default function ManageResourcesPage() {
     setDeleteSuccess(null);
 
     try {
-      await apiClient.delete(
-        `/api/v1/resources/${deleteTarget.resourceId}`,
-        {
-          withCredentials: true,
-        }
+      await protectedApiClient.delete(
+        `/resources/${deleteTarget.resourceId}`
       );
 
       setDeleteSuccess(

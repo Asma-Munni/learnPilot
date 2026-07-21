@@ -1,5 +1,5 @@
 import { StudyPlanDetailsResponse, StudyPlansResponse } from "@/app/types/study-plan";
-import { apiClient } from "@/lib/api-client";
+import { protectedApiClient } from "@/lib/api-client";
 
 export type GetStudyPlansParams = {
   page?: number;
@@ -15,7 +15,7 @@ export type UpdateStudyPlanStatus = "active" | "archived";
 export async function getStudyPlans(
   params: GetStudyPlansParams = {}
 ): Promise<StudyPlansResponse> {
-  const response = await apiClient.get<StudyPlansResponse>("/api/v1/study-plans", {
+  const response = await protectedApiClient.get<StudyPlansResponse>("/study-plans", {
     params,
   });
 
@@ -25,8 +25,8 @@ export async function getStudyPlans(
 export async function getStudyPlanById(
   planId: string
 ): Promise<StudyPlanDetailsResponse> {
-  const response = await apiClient.get<StudyPlanDetailsResponse>(
-    `/api/v1/study-plans/${planId}`
+  const response = await protectedApiClient.get<StudyPlanDetailsResponse>(
+    `/study-plans/${planId}`
   );
 
   return response.data;
@@ -37,8 +37,8 @@ export async function updateStudyTaskStatus(
   taskId: string,
   status: UpdateStudyTaskStatus
 ): Promise<StudyPlanDetailsResponse> {
-  const response = await apiClient.patch<StudyPlanDetailsResponse>(
-    `/api/v1/study-plans/${planId}/tasks/${taskId}/status`,
+  const response = await protectedApiClient.patch<StudyPlanDetailsResponse>(
+    `/study-plans/${planId}/tasks/${taskId}/status`,
     {
       status,
     }
@@ -51,8 +51,8 @@ export async function updateStudyPlanStatus(
   planId: string,
   status: UpdateStudyPlanStatus
 ): Promise<StudyPlanDetailsResponse> {
-  const response = await apiClient.patch<StudyPlanDetailsResponse>(
-    `/api/v1/study-plans/${planId}/status`,
+  const response = await protectedApiClient.patch<StudyPlanDetailsResponse>(
+    `/study-plans/${planId}/status`,
     {
       status,
     }

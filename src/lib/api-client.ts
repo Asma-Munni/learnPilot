@@ -1,6 +1,7 @@
 import axios from "axios";
 
-function getBaseURL(): string {
+// Public API client targeting direct backend URL for unauthenticated public catalog lookups
+function getPublicBaseURL(): string {
   const rawUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
   if (!rawUrl) {
@@ -12,44 +13,51 @@ function getBaseURL(): string {
         "Missing NEXT_PUBLIC_SERVER_URL environment variable in production configuration."
       );
     }
-    // Safe default fallback for local development
     return "http://localhost:5000";
   }
 
-  // Normalize trailing slashes to avoid double-slash paths (e.g. //api)
   return rawUrl.trim().replace(/\/$/, "");
 }
 
-export const apiClient = axios.create({
-  baseURL: getBaseURL(),
+export const publicApiClient = axios.create({
+  baseURL: getPublicBaseURL(),
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Protected API client targeting same-origin Next.js BFF proxy (/api/backend)
+export const protectedApiClient = axios.create({
+  baseURL: "/api/backend",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Response interceptor to categorize API error conditions
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (axios.isAxiosError(error)) {
-      if (!error.response) {
-        if (error.code === "ERR_NETWORK" || error.message.includes("Network Error")) {
-          console.error("❌ Network Failure or CORS Block:", error.message);
-        } else {
-          console.error("❌ Connection Failed:", error.message);
-        }
-      } else {
-        const status = error.response.status;
-        if (status === 401) {
-          console.warn("🔒 Unauthorized access (401): Authentication required or session expired.");
-        } else if (status === 404) {
-          console.warn("🔍 Requested API resource not found (404).");
-        } else if (status >= 500) {
-          console.error(`💥 Internal Server Error (${status}):`, error.response.data);
-        }
+// Default export alias for backward compatibility with public endpoints
+export const apiClient = publicApiClient;
+
+// Response error logging interceptor
+const errorInterceptor = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      console.error("❌ Connection or Network Failure:", error.message);
+    } else {
+      const status = error.response.status;
+      if (status === 401) {
+        console.warn("🔒 Unauthorized access (401): Session missing or invalid.");
+      } else if (status === 403) {
+        console.warn("🚫 Access Denied (403): Insufficient role permissions.");
+      } else if (status === 404) {
+        console.warn("🔍 Requested API resource not found (404).");
+      } else if (status >= 500) {
+        console.error(`💥 Internal Server Error (${status}):`, error.response.data);
       }
     }
-    return Promise.reject(error);
   }
-);
+  return Promise.reject(error);
+};
+
+publicApiClient.interceptors.response.use((res) => res, errorInterceptor);
+protectedApiClient.interceptors.response.use((res) => res, errorInterceptor);

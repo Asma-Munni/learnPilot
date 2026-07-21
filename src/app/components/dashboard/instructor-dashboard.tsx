@@ -15,24 +15,21 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import type {
-  LearningResource,
-} from "@/app/types/resource";
-import { apiClient } from "@/lib/api-client";
-
 import DashboardSkeleton from "./dashboard-skeleton";
+import { protectedApiClient } from "@/lib/api-client";
+import { LearningResource } from "@/app/types/resource";
 import DashboardStatCard from "./dashboard-stat-card";
 import RecentResources from "./recent-resources";
 
-type InstructorResourcesResponse = {
-  success: boolean;
-  message: string;
-  data: LearningResource[];
-};
-
-type ApiErrorResponse = {
+interface ApiErrorResponse {
   message?: string;
-};
+}
+
+interface InstructorResourcesResponse {
+  success: boolean;
+  message?: string;
+  data: LearningResource[];
+}
 
 export default function InstructorDashboard() {
   const {
@@ -42,14 +39,11 @@ export default function InstructorDashboard() {
     refetch,
     isRefetching,
   } = useQuery({
-    queryKey: [
-      "instructor-resources",
-    ],
-
+    queryKey: ["instructor-my-resources"],
     queryFn: async () => {
       const result =
-        await apiClient.get<InstructorResourcesResponse>(
-          "/api/v1/resources/my-resources",
+        await protectedApiClient.get<InstructorResourcesResponse>(
+          "/resources/my-resources",
         );
 
       return result.data;

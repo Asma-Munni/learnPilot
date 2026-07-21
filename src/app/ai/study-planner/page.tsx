@@ -13,8 +13,8 @@ import {
   useState,
 } from "react";
 
+import { protectedApiClient } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
-import { apiClient } from "@/lib/api-client";
 
 import GeneratedStudyPlan from "../../components/study-planner/generated-study-plan";
 import StudyPlanGeneratingState from "../../components/study-planner/study-plan-generating-state";
@@ -131,8 +131,8 @@ export default function StudyPlannerPage() {
       values: FormInputs,
     ) => {
       const response =
-        await apiClient.post<GenerateStudyPlanResponse>(
-          "/api/v1/ai/study-plans/generate",
+        await protectedApiClient.post<GenerateStudyPlanResponse>(
+          "/ai/study-plans/generate",
           values,
         );
 

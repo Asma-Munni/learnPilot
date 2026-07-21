@@ -12,7 +12,7 @@ import FormSection from "./form-section";
 import ArrayInputField from "./array-input-field";
 import { ALLOWED_CATEGORIES } from "@/app/types/resource";
 
-import { apiClient } from "@/lib/api-client";
+import { protectedApiClient } from "@/lib/api-client";
 
 const formSchema = z.object({
   title: z
@@ -113,10 +113,10 @@ export default function AddResourceForm() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setServerError(null);
-      const response = await apiClient.post(
-  "/api/v1/resources",
-  values,
-);
+      const response = await protectedApiClient.post(
+        "/resources",
+        values,
+      );
 
       if (response.data.success) {
         setSuccessData({
