@@ -4,10 +4,12 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
+  GraduationCap,
   Loader2,
   LockKeyhole,
   Mail,
   Sparkles,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,8 +18,8 @@ import { FormEvent, useState } from "react";
 import { signIn } from "@/lib/auth-client";
 
 const demoCredentials = {
-  email: "demo@learnpilot.com",
-  password: "Demo@12345",
+  learner: { email: "demo@learnpilot.com", password: "Demo@12345" },
+  instructor: { email: "instructor@learnpilot.com", password: "Demo@12345" },
 };
 
 export default function LoginPage() {
@@ -87,10 +89,30 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = () => {
-    setEmail(demoCredentials.email);
-    setPassword(demoCredentials.password);
+  const handleDemoLogin = async (role: "learner" | "instructor" = "learner") => {
+    const creds = demoCredentials[role];
+    setEmail(creds.email);
+    setPassword(creds.password);
     setErrorMessage("");
+    setIsLoading(true);
+
+    try {
+      const { error } = await signIn.email({
+        email: creds.email,
+        password: creds.password,
+        callbackURL: "/dashboard",
+      });
+
+      if (error) {
+        setErrorMessage(error.message || "Demo login failed.");
+        setIsLoading(false);
+      } else {
+        router.push("/dashboard");
+      }
+    } catch {
+      setErrorMessage("An unexpected error occurred during demo login.");
+      setIsLoading(false);
+    }
   };
 
   const isSubmitting = isLoading || isGoogleLoading;
@@ -178,14 +200,27 @@ export default function LoginPage() {
                 : "Continue with Google"}
             </button>
 
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={isSubmitting}
-              className="mt-3 w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 transition hover:bg-amber-100"
-            >
-              Use demo credentials
-            </button>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("learner")}
+                disabled={isSubmitting}
+                className="flex items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-60"
+              >
+                <User className="h-4 w-4 text-amber-700" />
+                Demo Learner
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("instructor")}
+                disabled={isSubmitting}
+                className="flex items-center justify-center gap-2 rounded-xl border border-indigo-300 bg-indigo-50 px-3 py-2.5 text-xs font-bold text-indigo-900 transition hover:bg-indigo-100 disabled:opacity-60"
+              >
+                <GraduationCap className="h-4 w-4 text-indigo-700" />
+                Demo Instructor
+              </button>
+            </div>
 
             <div className="my-6 flex items-center gap-4">
               <div className="h-px flex-1 bg-slate-200" />
