@@ -148,20 +148,13 @@ export default function StudyAssistantPage() {
       return;
     }
 
-    const conversation =
-      conversationResponse.data;
+    const conversation = conversationResponse.data;
 
-    setMessages(
-      conversation.messages,
-    );
-
-    setSuggestedPrompts(
-      conversation.suggestedPrompts,
-    );
-
-    setSelectedPlanId(
-      conversation.planId ?? "",
-    );
+    queueMicrotask(() => {
+      setMessages(conversation.messages);
+      setSuggestedPrompts(conversation.suggestedPrompts);
+      setSelectedPlanId(conversation.planId ?? "");
+    });
   }, [conversationResponse]);
 
   useEffect(() => {

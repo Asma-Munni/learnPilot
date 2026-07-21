@@ -1,55 +1,33 @@
 import { StudyPlanDetailsResponse, StudyPlansResponse } from "@/app/types/study-plan";
-import axios from "axios";
-
-const serverUrl =
-  process.env.NEXT_PUBLIC_SERVER_URL ||
-  "http://";
+import { apiClient } from "@/lib/api-client";
 
 export type GetStudyPlansParams = {
   page?: number;
   limit?: number;
-  status?:
-    | "all"
-    | "active"
-    | "completed"
-    | "archived";
+  status?: "all" | "active" | "completed" | "archived";
   search?: string;
 };
 
-export type UpdateStudyTaskStatus =
-  | "pending"
-  | "completed"
-  | "skipped";
+export type UpdateStudyTaskStatus = "pending" | "completed" | "skipped";
 
-export type UpdateStudyPlanStatus =
-  | "active"
-  | "archived";
+export type UpdateStudyPlanStatus = "active" | "archived";
 
 export async function getStudyPlans(
-  params: GetStudyPlansParams = {},
+  params: GetStudyPlansParams = {}
 ): Promise<StudyPlansResponse> {
-  const response =
-    await axios.get<StudyPlansResponse>(
-      `${serverUrl}/api/v1/study-plans`,
-      {
-        params,
-        withCredentials: true,
-      },
-    );
+  const response = await apiClient.get<StudyPlansResponse>("/api/v1/study-plans", {
+    params,
+  });
 
   return response.data;
 }
 
 export async function getStudyPlanById(
-  planId: string,
+  planId: string
 ): Promise<StudyPlanDetailsResponse> {
-  const response =
-    await axios.get<StudyPlanDetailsResponse>(
-      `${serverUrl}/api/v1/study-plans/${planId}`,
-      {
-        withCredentials: true,
-      },
-    );
+  const response = await apiClient.get<StudyPlanDetailsResponse>(
+    `/api/v1/study-plans/${planId}`
+  );
 
   return response.data;
 }
@@ -57,36 +35,28 @@ export async function getStudyPlanById(
 export async function updateStudyTaskStatus(
   planId: string,
   taskId: string,
-  status: UpdateStudyTaskStatus,
+  status: UpdateStudyTaskStatus
 ): Promise<StudyPlanDetailsResponse> {
-  const response =
-    await axios.patch<StudyPlanDetailsResponse>(
-      `${serverUrl}/api/v1/study-plans/${planId}/tasks/${taskId}/status`,
-      {
-        status,
-      },
-      {
-        withCredentials: true,
-      },
-    );
+  const response = await apiClient.patch<StudyPlanDetailsResponse>(
+    `/api/v1/study-plans/${planId}/tasks/${taskId}/status`,
+    {
+      status,
+    }
+  );
 
   return response.data;
 }
 
 export async function updateStudyPlanStatus(
   planId: string,
-  status: UpdateStudyPlanStatus,
+  status: UpdateStudyPlanStatus
 ): Promise<StudyPlanDetailsResponse> {
-  const response =
-    await axios.patch<StudyPlanDetailsResponse>(
-      `${serverUrl}/api/v1/study-plans/${planId}/status`,
-      {
-        status,
-      },
-      {
-        withCredentials: true,
-      },
-    );
+  const response = await apiClient.patch<StudyPlanDetailsResponse>(
+    `/api/v1/study-plans/${planId}/status`,
+    {
+      status,
+    }
+  );
 
   return response.data;
 }

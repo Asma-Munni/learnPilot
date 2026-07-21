@@ -5,13 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+
 import Link from "next/link";
 import { CheckCircle2, AlertTriangle, Eye, Loader2, Sparkles } from "lucide-react";
 import FormSection from "./form-section";
 import ArrayInputField from "./array-input-field";
 import { ALLOWED_CATEGORIES } from "@/app/types/resource";
-import axios from "axios";
+
 import { apiClient } from "@/lib/api-client";
 
 const formSchema = z.object({

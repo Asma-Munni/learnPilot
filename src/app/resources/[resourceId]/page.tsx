@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PlayCircle, Bookmark, BookmarkCheck, ArrowLeft, HelpCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { apiClient } from "@/lib/api-client";
 import Link from "next/link";
 import ResourceDetailsHero from "@/app/components/resources/resource-details-hero";
 import ResourceGallery from "@/app/components/resources/resource-gallery";
@@ -28,7 +29,7 @@ export default function ResourceDetailsPage() {
   } = useQuery({
     queryKey: ["resource", resourceId],
     queryFn: async () => {
-      const res = await axios.get(`http://localhost:5000/api/v1/resources/${resourceId}`);
+      const res = await apiClient.get(`/api/v1/resources/${resourceId}`);
       return res.data;
     },
     retry: false,
