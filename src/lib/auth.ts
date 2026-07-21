@@ -1,13 +1,37 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { jwt } from "better-auth/plugins";
-import { MongoClient, Db } from "mongodb";
+import { Db, MongoClient } from "mongodb";
 
 const mongoUri = process.env.MONGO_DB_URI;
-const databaseName = process.env.MONGO_DB_NAME || "Learn-Pilot";
+const databaseName = process.env.MONGO_DB_NAME;
+const betterAuthURL = process.env.BETTER_AUTH_URL;
+const betterAuthSecret = process.env.BETTER_AUTH_SECRET;
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
 if (!mongoUri) {
-  console.warn("⚠️ MONGO_DB_URI is missing from environment variables.");
+  throw new Error("MONGO_DB_URI is not configured");
+}
+
+if (!databaseName) {
+  throw new Error("MONGO_DB_NAME is not configured");
+}
+
+if (!betterAuthURL) {
+  throw new Error("BETTER_AUTH_URL is not configured");
+}
+
+if (!betterAuthSecret) {
+  throw new Error("BETTER_AUTH_SECRET is not configured");
+}
+
+if (!googleClientId) {
+  throw new Error("GOOGLE_CLIENT_ID is not configured");
+}
+
+if (!googleClientSecret) {
+  throw new Error("GOOGLE_CLIENT_SECRET is not configured");
 }
 
 declare global {
@@ -16,72 +40,57 @@ declare global {
 }
 
 let client: MongoClient;
-
-if (mongoUri) {
-  if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClient) {
-      global._mongoClient = new MongoClient(mongoUri);
-    }
-    client = global._mongoClient;
-  } else {
-    client = new MongoClient(mongoUri);
+if (process.env.NODE_ENV === "development") {
+  if (!global._mongoClient) {
+    global._mongoClient = new MongoClient(mongoUri);
   }
+  client = global._mongoClient;
 } else {
-  client = new MongoClient("mongodb://localhost:27017/dummy");
+  client = new MongoClient(mongoUri);
 }
 
 const db: Db = client.db(databaseName);
 
-const allowedTrustedOrigins = Array.from(
-  new Set([
+export const auth = betterAuth({
+  secret: betterAuthSecret,
+  baseURL: betterAuthURL,
+
+  trustedOrigins: [
     "http://localhost:3000",
     "https://learnpilot-client.vercel.app",
-    ...(process.env.BETTER_AUTH_URL
-      ? [process.env.BETTER_AUTH_URL.trim().replace(/\/$/, "")]
-      : []),
-  ])
-);
+  ],
 
-const authIssuer =
-  process.env.AUTH_ISSUER ||
-  process.env.BETTER_AUTH_URL ||
-  "http://localhost:3000";
-const authAudience = process.env.AUTH_AUDIENCE || "learnpilot-server";
-
-export const auth = betterAuth({
   database: mongodbAdapter(db, {
     client,
   }),
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-  secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: allowedTrustedOrigins,
+
   plugins: [
     jwt({
       jwt: {
         expirationTime: "15m",
-        issuer: authIssuer,
-        audience: authAudience,
+        issuer: process.env.AUTH_ISSUER || betterAuthURL,
+        audience: process.env.AUTH_AUDIENCE || "learnpilot-server",
       },
     }),
   ],
+
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
   },
+
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      enabled: Boolean(
-        process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ),
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     },
   },
+
   user: {
     additionalFields: {
       role: {
         type: ["learner", "instructor"],
-        required: false,
+        required: true,
         defaultValue: "learner",
         input: true,
       },

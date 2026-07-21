@@ -78,16 +78,19 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setErrorMessage(
-          error.message || "Google login failed.",
-        );
+        setErrorMessage(error.message || "Could not continue with Google.");
         setIsGoogleLoading(false);
       }
-    } catch {
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Google sign-in initialization failed", error);
+      }
+
       setErrorMessage("Could not continue with Google.");
       setIsGoogleLoading(false);
     }
   };
+
 
   const handleDemoLogin = async (role: "learner" | "instructor" = "learner") => {
     const creds = demoCredentials[role];
