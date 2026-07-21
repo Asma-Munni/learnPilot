@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     "Agentic AI-powered learning platform",
 };
 
+
+
+import { Toaster } from "react-hot-toast";
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +25,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <QueryProvider>
+          <Toaster />
           <Navbar />
           {children}
           <Footer />

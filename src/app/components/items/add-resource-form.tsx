@@ -13,6 +13,7 @@ import ArrayInputField from "./array-input-field";
 import { ALLOWED_CATEGORIES } from "@/app/types/resource";
 
 import { protectedApiClient } from "@/lib/api-client";
+import { toast } from "react-hot-toast";
 
 const formSchema = z.object({
   title: z
@@ -74,6 +75,7 @@ export default function AddResourceForm() {
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     reset,
     formState: { errors, isSubmitting },
@@ -119,27 +121,33 @@ export default function AddResourceForm() {
       );
 
       if (response.data.success) {
+        toast.success("Resource created successfully!");
         setSuccessData({
           resourceId: response.data.data.resourceId,
           title: response.data.data.title,
           status: values.status,
         });
 
-        // Invalidate resources queries cache to trigger refetch
         await queryClient.invalidateQueries({ queryKey: ["resources"] });
+        await queryClient.invalidateQueries({ queryKey: ["my-resources"] });
 
         reset();
       }
-    } catch (err) {
-      let msg = "Failed to save resource";
-      if (err && typeof err === "object") {
-        const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
-        msg = axiosError.response?.data?.message || axiosError.message || msg;
-      } else if (err instanceof Error) {
-        msg = err.message;
+    } catch (err: unknown) {
+        // Attempt to extract Axios error details if present
+        const axiosError = (err as { response?: { status?: number; data?: { errors?: Record<string, string>; message?: string } } }).response;
+        if (axiosError?.status === 422 && axiosError.data?.errors) {
+          Object.entries(axiosError.data.errors).forEach(([key, value]) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (setError as any)(key as string, { type: "manual", message: value as string });
+          });
+          toast.error("Please fix the errors in the form.");
+        } else {
+          const msg = axiosError?.data?.message || (err as Error).message || "Failed to save resource";
+          setServerError(msg);
+          toast.error(msg);
+        }
       }
-      setServerError(msg);
-    }
   };
 
   if (successData) {

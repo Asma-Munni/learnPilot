@@ -286,13 +286,15 @@ export default function Navbar() {
             <div className="h-10 w-28 animate-pulse rounded-xl bg-slate-200" />
           ) : session ? (
             <>
-              <Link
-                href="/items/add"
-                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Add Resource
-              </Link>
+              {userRole === "instructor" && (
+                <Link
+                  href="/items/add"
+                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  Add Resource
+                </Link>
+              )}
 
               <div
                 ref={profileMenuRef}

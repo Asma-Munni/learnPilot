@@ -160,42 +160,21 @@ export default function RegisterPage() {
     setErrorMessage("");
     setSuccessMessage("");
     setIsGoogleLoading(true);
-
     try {
-      localStorage.setItem(
-        "learnpilot-selected-role",
-        role,
-      );
-
-      const { error } = await signIn.social({
+      // Preserve selected role for later use
+      localStorage.setItem("learnpilot-selected-role", role);
+      // Use absolute URLs for callback and error handling
+      await signIn.social({
         provider: "google",
-        callbackURL:
-          "/register?google=complete",
-        errorCallbackURL:
-          "/register?google=error",
+        callbackURL: `${window.location.origin}/register?google=complete`,
+        errorCallbackURL: `${window.location.origin}/register?google=error`,
       });
-
-      if (error) {
-        localStorage.removeItem(
-          "learnpilot-selected-role",
-        );
-
-        setErrorMessage(
-          error.message ||
-            "Google registration failed.",
-        );
-
-        setIsGoogleLoading(false);
-      }
-    } catch {
-      localStorage.removeItem(
-        "learnpilot-selected-role",
-      );
-
-      setErrorMessage(
-        "Could not continue with Google.",
-      );
-
+    } catch (e: unknown) {
+      const err = e as Error;
+      // Clean up stored role on failure
+      localStorage.removeItem("learnpilot-selected-role");
+      setErrorMessage(err?.message || "Could not continue with Google.");
+    } finally {
       setIsGoogleLoading(false);
     }
   };

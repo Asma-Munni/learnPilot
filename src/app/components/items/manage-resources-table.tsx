@@ -7,12 +7,12 @@ import ResourceStatusBadge from "./resource-status-badge";
 
 interface ManageResourcesTableProps {
   resources: LearningResource[];
-  onDeleteClick: (resource: LearningResource) => void;
+  onDelete: (resource: LearningResource) => void;
 }
 
 export default function ManageResourcesTable({
   resources,
-  onDeleteClick,
+  onDelete,
 }: ManageResourcesTableProps) {
   const formatDate = (dateStr: string) => {
     try {
@@ -102,7 +102,7 @@ export default function ManageResourcesTable({
                   </Link>
                   <button
                     type="button"
-                    onClick={() => onDeleteClick(item)}
+                    onClick={() => onDelete(item)}
                     className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100 transition outline-none"
                     title="Delete Resource"
                   >
